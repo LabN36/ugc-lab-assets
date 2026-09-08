@@ -12,4 +12,11 @@ for i in $(seq 1 10); do
 done
 [ "$(stat -c %s "$OUT" 2>/dev/null || echo 0)" -gt 2000000000 ] || { echo "ADD_MULTI_FAIL"; exit 3; }
 printf 'it     %10s  diffusion_models/Wan2_1-InfiniteTalk-Multi_fp16.safetensors\n' "$(numfmt --to=iec "$(stat -c %s "$OUT")")" >> "$V/MANIFEST.txt"
+# also close the loop on wav2vec2: verify by BYTES (base model ~190MB) and add its manifest line
+W=$(find /workspace/ComfyUI/models -type f -name wav2vec2-chinese-base_fp16.safetensors | head -n1)
+if [ -n "$W" ] && [ "$(stat -c %s "$W")" -gt 150000000 ]; then
+  grep -q wav2vec2-chinese-base "$V/MANIFEST.txt" 2>/dev/null || printf 'it     %10s  %s\n' "$(numfmt --to=iec "$(stat -c %s "$W")")" "${W#/workspace/ComfyUI/models/}" >> "$V/MANIFEST.txt"
+  echo "wav2vec2 ok ($(stat -c %s "$W") bytes) — manifest line present"
+else echo "WAV2VEC2_BAD_OR_MISSING"; fi
+echo "== final manifest =="; cat "$V/MANIFEST.txt"; df -h /workspace | tail -1
 echo "ADD_MULTI_OK"; runpodctl remove pod "$RUNPOD_POD_ID" 2>/dev/null || true
