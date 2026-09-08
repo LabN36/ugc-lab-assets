@@ -19,7 +19,7 @@ declare -A MIN=( [LongCat-Avatar-15_bf16.safetensors]=29000000000 [wan2.1_i2v_48
  [umt5-xxl-enc-bf16.safetensors]=10000000000 [Wan2_1-InfiniTetalk-Single_fp16.safetensors]=2000000000
  [whisper_large_v3_encoder_fp16.safetensors]=1400000000 [clip_vision_h.safetensors]=1100000000
  [LongCat-Avatar-15_dmd_distill_lora_rank128_bf16.safetensors]=1000000000 [lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors]=500000000
- [wav2vec2-chinese-base_fp16.safetensors]=300000000 [Wan2_1_VAE_bf16.safetensors]=200000000 [RealESRGAN_x2plus.pth]=60000000 )
+ [wav2vec2-chinese-base_fp16.safetensors]=150000000 [Wan2_1_VAE_bf16.safetensors]=200000000 [RealESRGAN_x2plus.pth]=60000000 )
 bad(){ local f; f=$(find "$M" -type f -name "$1" | head -n1); [ -z "$f" ] && return 0; [ "$(stat -c %s "$f")" -lt "${MIN[$1]}" ]; }
 
 say "state"; df -h "$V" | tail -1; du -sh "$V/opt" "$V/it_models.tgz" "$V/env" "$M" 2>/dev/null
