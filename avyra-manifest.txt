@@ -14,3 +14,4 @@ it     clip_vision        clip_vision_h.safetensors
 it     loras              lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors
 it     wav2vec            wav2vec2-chinese-base_fp16.safetensors
 extra  upscale_models     RealESRGAN_x2plus.pth
+it     diffusion_models   Wan2_1-InfiniteTalk-Multi_fp16.safetensors
