@@ -43,7 +43,9 @@ get(){
       echo "  attempt $i: $have/$want bytes — resuming in 10s"; sleep 10
     done
     have="$(stat -c %s "$out" 2>/dev/null || echo 0)"
-    if { [ "${want:-0}" -gt 0 ] && [ "$have" -ne "$want" ]; } || [ "$have" -le 1000000 ]; then
+    # exact-size match is the only test when the API knows the size; the 1 MB floor applies only when it doesn't
+    # (run 1 false-alarmed on the 420 KB vitpose_h .onnx — complete, but under the floor)
+    if { [ "${want:-0}" -gt 0 ] && [ "$have" -ne "$want" ]; } || { [ "${want:-0}" -eq 0 ] && [ "$have" -le 1000000 ]; }; then
       echo "FAIL  $dest/$(basename "$file")  $have/$want bytes"; FAILS=$((FAILS+1)); return 1
     fi
     echo "ok    $dest/$(basename "$file")  ($have bytes)"
