@@ -51,6 +51,14 @@ if [ -n "${VOL_GB:-}" ] && [ "$(( ${used_gb:-0} + NEED_GB ))" -gt "$(( VOL_GB - 
   sed -i '/SCAIL_2/d' "$V/MANIFEST-motion.txt" 2>/dev/null || true
   used_gb=$(du -sBG "$V" 2>/dev/null | cut -f1 | tr -dc '0-9'); echo "SPACE: now used ${used_gb} GB of ${VOL_GB} (SCAIL-2 removed from this volume)"
 fi
+# Still short (2026-09-09: 92 GB used incl. a partial HIGH file; 74 after SCAIL) → also drop HuMo, which the user
+# DROPPED from the roadmap on 2026-09-09 (27 min per 3 s clip). 14B fp8 17 GB + 1.7B 3.3 GB; KS-2 keeps its copy.
+if [ -n "${VOL_GB:-}" ] && [ "$(( ${used_gb:-0} + NEED_GB ))" -gt "$(( VOL_GB - 2 ))" ] && [ -f "$M/diffusion_models/Wan2_1-HuMo-14B_fp8_e4m3fn_scaled_KJ.safetensors" ]; then
+  echo "SPACE: still not enough → removing HuMo weights (dropped from the roadmap; 20 GB)"
+  rm -f "$M/diffusion_models/Wan2_1-HuMo-14B_fp8_e4m3fn_scaled_KJ.safetensors" "$M/diffusion_models/Wan2_1-HuMo-1_7B_fp16.safetensors"
+  sed -i '/HuMo-/d' "$V/MANIFEST-motion.txt" 2>/dev/null || true
+  used_gb=$(du -sBG "$V" 2>/dev/null | cut -f1 | tr -dc '0-9'); echo "SPACE: now used ${used_gb} GB of ${VOL_GB} (HuMo removed from this volume)"
+fi
 if [ -n "${VOL_GB:-}" ] && [ "$(( ${used_gb:-0} + NEED_GB ))" -gt "$(( VOL_GB - 2 ))" ]; then
   echo "POPULATE_I2V_FAILED (no space: used ${used_gb} + ${NEED_GB} > ${VOL_GB} GB)"; sleep 600; exit 1
 fi
