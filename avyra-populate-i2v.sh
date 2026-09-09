@@ -40,12 +40,19 @@ say "0/3 volume: $(df -h "$V" | tail -1)"
 # Space guard: the 100 GB avyra-motion volume (EU-RO-1) holds ~81 GB; the two I2V experts need 30 GB + 1.3 GB LoRAs.
 # If free space < 34 GB, drop the PARKED SCAIL-2 weights (17 GB + 1 GB DPO LoRA; re-downloadable in 10 min, and the
 # KS-2 volume keeps its own copy). Never triggers on the 250 GB avyra-models volume.
-free_gb=$(df -BG --output=avail "$V" | tail -1 | tr -dc '0-9')
-if [ "${free_gb:-0}" -lt 34 ] && [ -f "$M/diffusion_models/wan2.1_14B_SCAIL_2_fp8_scaled.safetensors" ]; then
-  echo "SPACE: only ${free_gb} GB free → removing parked SCAIL-2 weights to make room"
+# TRAP: `df /workspace` reports the whole Runpod cluster filesystem (petabytes), NOT the volume quota → measure
+# usage with du and compare against the volume size the launcher passes in (VOL_GB, from the Runpod API).
+NEED_GB=33
+used_gb=$(du -sBG "$V" 2>/dev/null | cut -f1 | tr -dc '0-9')
+echo "SPACE: volume ${VOL_GB:-?} GB, used ${used_gb:-?} GB, need ${NEED_GB} GB more"
+if [ -n "${VOL_GB:-}" ] && [ "$(( ${used_gb:-0} + NEED_GB ))" -gt "$(( VOL_GB - 2 ))" ] && [ -f "$M/diffusion_models/wan2.1_14B_SCAIL_2_fp8_scaled.safetensors" ]; then
+  echo "SPACE: not enough → removing parked SCAIL-2 weights (17 GB + 1 GB) to make room"
   rm -f "$M/diffusion_models/wan2.1_14B_SCAIL_2_fp8_scaled.safetensors" "$M/loras/wan2.1_SCAIL_2_DPO_lora_bf16.safetensors"
   sed -i '/SCAIL_2/d' "$V/MANIFEST-motion.txt" 2>/dev/null || true
-  echo "SPACE: now $(df -BG --output=avail "$V" | tail -1 | tr -dc '0-9') GB free (SCAIL-2 removed from this volume)"
+  used_gb=$(du -sBG "$V" 2>/dev/null | cut -f1 | tr -dc '0-9'); echo "SPACE: now used ${used_gb} GB of ${VOL_GB} (SCAIL-2 removed from this volume)"
+fi
+if [ -n "${VOL_GB:-}" ] && [ "$(( ${used_gb:-0} + NEED_GB ))" -gt "$(( VOL_GB - 2 ))" ]; then
+  echo "POPULATE_I2V_FAILED (no space: used ${used_gb} + ${NEED_GB} > ${VOL_GB} GB)"; sleep 600; exit 1
 fi
 say "1/3 Wan 2.2 I2V A14B fp8 e4m3fn (kijai) HIGH + LOW, 15.0 GB each"
 get Kijai/WanVideo_comfy_fp8_scaled "I2V/Wan2_2-I2V-A14B-HIGH_fp8_e4m3fn_scaled_KJ.safetensors" diffusion_models
